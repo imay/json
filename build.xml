@@ -12,15 +12,14 @@
 
     <target name="prepare" depends="clean">
     	<mkdir dir="${builddir}"/>
-        <mkdir dir="${builddir}/gen_java"/>
     </target>
 
     <taskdef name="cup" classname="java_cup.anttask.CUPTask" classpath="${libdir}/java-cup-0.11a.jar"/>
     <taskdef name="jflex" classname="JFlex.anttask.JFlexTask" classpath="${libdir}/jflex-1.4.3.jar"/>
 
     <target name="gen-java" depends="prepare">
-        <cup srcfile="src/cup/json.yy" destdir="${builddir}/gen_java" parser="JsonParser" symbols="JsonParserSymbols" nosummary="true" quiet="true"/>
-        <jflex file="src/jflex/json.flex" destdir="${builddir}/gen_java"/>
+        <cup srcfile="src/cup/json.yy" destdir="src/java" parser="JsonParser" symbols="JsonParserSymbols" nosummary="true" quiet="true"/>
+        <jflex file="src/jflex/json.flex" destdir="src/java"/>
     </target>
 
     <!-- the normal classpath -->
@@ -33,20 +32,36 @@
 
     <!-- create the jar file -->
     <target name="jar" depends="compile">
-    	<jar jarfile="${builddir}/palo-fe.jar">
+    	<jar jarfile="${builddir}/json.jar">
       	    <fileset dir="${builddir}">
                 <include name="**/*.class" />
-                <include name="**/*.dat" />
+                <include name="**/*Test.class" />
             </fileset>
         </jar>
     </target>
 
-    <target name="compile" depends="prepare, gen-java">
-    	<javac destdir="${builddir}" source="1.7" includeantruntime="false" debug="true" failonerror="false" debuglevel="lines,vars,source">
+    <target name="compile" depends="prepare">
+        <javac destdir="${builddir}" source="1.7" includeantruntime="false" debug="true"
+                deprecation="true" failonerror="false" debuglevel="lines,vars,source">
             <classpath refid="classpathid"/>
             <src path="src/java"/>
-            <src path="build/gen_java"/>
+            <src path="test"/>
        </javac>
+   </target>
+
+   <target name="test" depends="compile">
+       <property name="reports.tests" value="${builddir}/reportTests"/>
+       <mkdir dir="${builddir}/reportTests"/>
+       <junit printsummary="yes" haltonfailure="yes">
+           <classpath refid="classpathid"/>
+           <!-- <formatter type="brief"/> -->
+           <formatter type="plain" usefile="false" /> <!-- write the details to screen -->
+           <batchtest fork="yes" todir="${reports.tests}">
+               <fileset dir="${builddir}">
+                   <include name="**/*Test.class"/>
+               </fileset>
+           </batchtest>
+       </junit>
    </target>
 </project>
 
